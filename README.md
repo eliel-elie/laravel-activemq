@@ -1,5 +1,12 @@
 # Laravel ActiveMQ driver
 
+<p align="left">
+<a href="https://travis-ci.org/elielelie/laravel-activemq"><img src="https://img.shields.io/travis/elielelie/laravel-activemq/master.svg?style=flat-square" alt="Build Status"></a>
+<a href="https://packagist.org/packages/elielelie/laravel-activemq"><img src="https://poser.pugx.org/elielelie/laravel-activemq/d/total.svg" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/elielelie/laravel-activemq"><img src="https://poser.pugx.org/elielelie/laravel-activemq/v/stable.svg" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/elielelie/laravel-activemq"><img src="https://poser.pugx.org/elielelie/laravel-activemq/license.svg" alt="License"></a>
+</p>
+
 This package enables usage of ActiveMQ (Stomp) driver for queueing natively inside Laravel.
 
 ## Installation
