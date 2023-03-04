@@ -52,7 +52,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
         $this->readQueues   = $this->setReadQueues();
         $this->writeQueues  = $this->setWriteQueues();
         $this->client       = $stompClient->client;
-        $this->log          = app('stompLog');
+        $this->log          = app('activemqLog');
 
         $this->session = $this->client->getClient()->getSessionId();
     }

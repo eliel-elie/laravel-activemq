@@ -4,7 +4,7 @@ use Stomp\Protocol\Version;
 
 return [
 
-    'driver'        => 'stomp',
+    'driver'        => 'activemq',
     'read_queues'   => env('ACTIVEMQ_READ_QUEUES'),
     'write_queues'  => env('ACTIVEMQ_WRITE_QUEUES'),
     'protocol'      => env('ACTIVEMQ_PROTOCOL', 'tcp'),
