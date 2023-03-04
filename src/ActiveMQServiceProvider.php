@@ -20,7 +20,7 @@ class ActiveMQServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->mergeConfigFrom(__DIR__ . '/config/log-active.php', 'log-activemq');
+        $this->mergeConfigFrom(__DIR__ . '/config/log-activemq.php', 'log-activemq');
 
         $this->mergeConfigFrom(__DIR__ . '/config/activemq.php', 'queue.connections.activemq');
     }
