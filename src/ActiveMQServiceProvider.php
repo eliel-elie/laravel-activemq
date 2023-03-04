@@ -31,7 +31,6 @@ class ActiveMQServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-
         app()->singleton(Config::class);
         app()->singleton(ConnectionWrapper::class);
         app()->singleton(ClientWrapper::class);
@@ -62,8 +61,8 @@ class ActiveMQServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../../config/config.php' => config_path('activemq.php'),
-            ], 'config');
+                __DIR__ . '/../config/activemq.php' => config_path('activemq.php'),
+            ], 'activemq-config');
         }
     }
 
