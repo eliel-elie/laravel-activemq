@@ -34,6 +34,10 @@ default;email
 
 You can see all other available `.env` variables, their defaults and usage explanation within the [config file](config/activemq.php)
 
+You can publish the configuration file by running:
+
+```$ php artisan vendor:publish --provider="Elielelie\ActiveMQ\ActiveMQServiceProvider" ```
+
 ## Failed jobs
 
 For the sake of simplicity and brevity ActiveMQJob class is defined in a way to utilize Laravel tries and backoff properties out of the box ([official documentation](https://laravel.com/docs/8.x/queues#dealing-with-failed-jobs)).

@@ -62,7 +62,7 @@ class ActiveMQServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__ . '/../config/config.php' => config_path('activemq.php'),
+                __DIR__ . '/../../config/config.php' => config_path('activemq.php'),
             ], 'config');
         }
     }
