@@ -7,9 +7,9 @@ use DateInterval;
 use DateTimeInterface;
 use Elielelie\ActiveMQ\Contracts\HasHeaders;
 use Elielelie\ActiveMQ\Contracts\HasRawData;
+use Elielelie\ActiveMQ\Jobs\ActiveMQJob;
 use Exception;
 use Illuminate\Broadcasting\BroadcastEvent;
-use Illuminate\Contracts\Queue\Job;
 use Illuminate\Queue\CallQueuedClosure;
 use Illuminate\Queue\InvalidPayloadException;
 use Illuminate\Queue\Queue;
@@ -328,7 +328,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
      * Pop the next job off of the queue.
      *
      * @param  string|null  $queue
-     * @return Job|null
+     * @return ActiveMQJob
      */
     public function pop($queue = null)
     {
