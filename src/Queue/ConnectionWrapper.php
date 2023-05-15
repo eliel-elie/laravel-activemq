@@ -13,7 +13,7 @@ class ConnectionWrapper
         $protocol   = Config::get('protocol');
         $host       = Config::get('host');
         $port       = Config::get('port');
-        $persistent = Config::getPersistence();
+        $persistent = Config::getPersistent();
 
         $this->connection = new Connection("$protocol://$host:$port");
 
