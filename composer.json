@@ -1,0 +1,40 @@
+{
+	"name": "elielelie/laravel-activemq",
+    "description": "Laravel ActiveMQ driver",
+    "keywords": [
+        "php",
+        "laravel",
+        "driver",
+        "stomp",
+		"ActiveMQ",
+        "queue"
+    ],
+	"license": "MIT",
+    "require": {
+		"php": "^7.4|^8.0",
+        "stomp-php/stomp-php": "^5.0"
+    },
+	"autoload": {
+        "psr-4": {
+            "Elielelie\\ActiveMQ\\": "src/"
+        }
+    },
+	"autoload-dev": {
+        "psr-4": {
+            "Elielelie\\ActiveMQ\\Tests\\": "tests/"
+        }
+    },
+	"extra": {
+        "laravel": {
+            "providers": [
+                "Elielelie\\ActiveMQ\\ActiveMQServiceProvider"
+            ],
+            "aliases": [
+                {
+                    "alias": "ActiveMQ",
+                    "facade": "Elielelie\\ActiveMQ\\Facades\\ActiveMQ"
+                }
+            ]
+        }
+    }
+}
