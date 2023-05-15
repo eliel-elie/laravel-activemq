@@ -69,7 +69,7 @@ return [
      */
     'prepend_queues'    => true,
 
-    'persistent_queues' => env('ACTIVEMQ_PERSISTENT', false),
+    'persistent_queues' => env('ACTIVEMQ_PERSISTENT', false) === true,
 
     /**
      * Heartbeat which will be requested from server at given millisecond period.

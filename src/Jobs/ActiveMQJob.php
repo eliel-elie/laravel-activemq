@@ -194,7 +194,7 @@ class ActiveMQJob extends Job implements JobContract
         $headers = array_merge($this->headers(), $delayHeader);
         $headers = $this->stompQueue->forgetHeadersForRedelivery($headers);
 
-        return new Message(json_encode($this->payload), $headers);
+        return new Message(json_encode($this->payload), $headers + ['persistent' => Config::get('persistent_queues')]);
     }
 
     /**

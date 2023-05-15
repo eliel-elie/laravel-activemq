@@ -13,11 +13,9 @@ class ConnectionWrapper
         $protocol   = Config::get('protocol');
         $host       = Config::get('host');
         $port       = Config::get('port');
-        $persistent = Config::getPersistent();
 
         $this->connection = new Connection("$protocol://$host:$port");
 
-        $this->connection->setPersistentConnection($persistent);
         $this->connection->setReadTimeout(0, 250000);
 
     }
