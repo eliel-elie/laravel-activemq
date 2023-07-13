@@ -47,7 +47,7 @@ return [
      * attempt 3 - 9s
      * attempt 4 - 16s
      */
-    'backoff_multiplier' => env('STOMP_BACKOFF_MULTIPLIER', 2),
+    'backoff_multiplier' => env('ACTIVEMQ_BACKOFF_MULTIPLIER', 2),
 
     /**
      * What will be appended as the queue if only address/topic is defined.
@@ -55,7 +55,7 @@ return [
      * hash as queue name. In case of multiple services connecting in such
      * a way, it becomes unclear which queue is from which service.
      */
-    'default_queue'     => env('ACTIVEMQ_DEFAULT_QUEUE'),
+    'default_queue'     => env('ACTIVEMQ_DEFAULT_QUEUE','default'),
 
     /**
      * Use Laravel logger for outputting logs.
