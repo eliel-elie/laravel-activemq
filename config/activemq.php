@@ -57,6 +57,10 @@ return [
      */
     'default_queue'     => env('ACTIVEMQ_DEFAULT_QUEUE','default'),
 
+    'read_queues'     => env('ACTIVEMQ_QUEUE'),
+
+    'write_queues'     => env('ACTIVEMQ_QUEUE'),
+
     /**
      * Use Laravel logger for outputting logs.
      */
