@@ -32,8 +32,7 @@ ACTIVEMQ_PASSWORD      broker password (defaults to admin)
 You can subscribe to queues to read from or to write to with:
 
 ```
-STOMP_READ_QUEUES=...
-STOMP_WRITE_QUEUES=...
+ACTIVEMQ_QUEUE=...
 ```
 ```
 default;email 
