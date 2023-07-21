@@ -17,7 +17,6 @@ class ConnectionWrapper
         $this->connection = new Connection("$protocol://$host:$port");
 
         $this->connection->setReadTimeout(0, 250000);
-        $this->connection->setPersistentConnection(true);
 
     }
 }
