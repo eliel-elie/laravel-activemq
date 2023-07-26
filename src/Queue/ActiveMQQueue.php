@@ -269,8 +269,12 @@ class ActiveMQQueue extends Queue implements QueueInterface
 
             $schedule = 0;
 
-            if ($job->delay instanceof DateInterval || $job->delay instanceof DateTimeInterface) {
+            if ($job->delay instanceof DateInterval) {
                 $schedule = IntervalToMilliseconds::convert($job->delay);
+            }
+
+            if ($job->delay instanceof DateTimeInterface) {
+                $schedule = IntervalToMilliseconds::convert(now()->diff($job->delay));
             }
 
             if (is_int($job->delay)) {
