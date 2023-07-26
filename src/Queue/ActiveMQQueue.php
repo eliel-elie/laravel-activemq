@@ -7,6 +7,7 @@ use DateInterval;
 use DateTimeInterface;
 use Elielelie\ActiveMQ\Contracts\HasHeaders;
 use Elielelie\ActiveMQ\Contracts\HasRawData;
+use Elielelie\ActiveMQ\Helpers\IntervalToMilliseconds;
 use Elielelie\ActiveMQ\Jobs\ActiveMQJob;
 use Exception;
 use Illuminate\Broadcasting\BroadcastEvent;
@@ -263,6 +264,21 @@ class ActiveMQQueue extends Queue implements QueueInterface
         $payload = $this->addMissingUuid($payload);
         $headers = $this->getHeaders($job);
         $headers = $this->forgetHeadersForRedelivery($headers);
+
+        if($job->delay) {
+
+            $schedule = 0;
+
+            if ($job->delay instanceof DateInterval || $job->delay instanceof DateTimeInterface) {
+                $schedule = IntervalToMilliseconds::convert($job->delay);
+            }
+
+            if (is_int($job->delay)) {
+                $schedule = $job->delay * 1000;
+            }
+
+            $headers = array_merge($headers, ['AMQ_SCHEDULED_DELAY' => $schedule]);
+        }
 
         $message = new Message(json_encode($payload), $headers);
 
