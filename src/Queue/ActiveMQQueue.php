@@ -265,20 +265,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
         $headers = $this->getHeaders($job);
         $headers = $this->forgetHeadersForRedelivery($headers);
 
-        if($job->delay) {
-
-            $schedule = 0;
-
-            if ($job->delay instanceof DateInterval || $job->delay instanceof DateTimeInterface) {
-                $schedule = IntervalToMilliseconds::convert($job->delay);
-            }
-
-            if (is_int($job->delay)) {
-                $schedule = $job->delay * 1000;
-            }
-
-            $headers = array_merge($headers, ['AMQ_SCHEDULED_DELAY' => $schedule]);
-        }
+        $headers = $this->setDelayQueue($job, $headers);
 
         $message = new Message(json_encode($payload), $headers);
 
@@ -289,6 +276,34 @@ class ActiveMQQueue extends Queue implements QueueInterface
         }
 
         return $message;
+    }
+
+    /**
+     * @param $job
+     * @return array
+     */
+    protected function setDelayQueue($job, $headers): array
+    {
+        if($job->delay) {
+
+            $schedule = 0;
+
+            if ($job->delay instanceof DateInterval) {
+                $schedule = IntervalToMilliseconds::convert($job->delay);
+            }
+
+            if ($job->delay instanceof DateTimeInterface) {
+                $schedule = IntervalToMilliseconds::convert(now()->diff($job->delay));
+            }
+
+            if (is_int($job->delay)) {
+                $schedule = $job->delay * 1000;
+            }
+
+            $headers =  array_merge($headers, ['AMQ_SCHEDULED_DELAY' => $schedule]);
+        }
+
+        return $headers;
     }
 
     /**
