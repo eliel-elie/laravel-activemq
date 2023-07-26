@@ -265,6 +265,25 @@ class ActiveMQQueue extends Queue implements QueueInterface
         $headers = $this->getHeaders($job);
         $headers = $this->forgetHeadersForRedelivery($headers);
 
+        $headers = $this->setDelayQueue($job, $headers);
+
+        $message = new Message(json_encode($payload), $headers);
+
+        if (JSON_ERROR_NONE !== json_last_error()) {
+            throw new InvalidPayloadException(
+                'Unable to JSON encode payload. Error code: ' . json_last_error()
+            );
+        }
+
+        return $message;
+    }
+
+    /**
+     * @param $job
+     * @return array
+     */
+    protected function setDelayQueue($job, $headers): array
+    {
         if($job->delay) {
 
             $schedule = 0;
@@ -281,18 +300,10 @@ class ActiveMQQueue extends Queue implements QueueInterface
                 $schedule = $job->delay * 1000;
             }
 
-            $headers = array_merge($headers, ['AMQ_SCHEDULED_DELAY' => $schedule]);
+            $headers =  array_merge($headers, ['AMQ_SCHEDULED_DELAY' => $schedule]);
         }
 
-        $message = new Message(json_encode($payload), $headers);
-
-        if (JSON_ERROR_NONE !== json_last_error()) {
-            throw new InvalidPayloadException(
-                'Unable to JSON encode payload. Error code: ' . json_last_error()
-            );
-        }
-
-        return $message;
+        return $headers;
     }
 
     /**
