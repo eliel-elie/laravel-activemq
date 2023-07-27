@@ -264,7 +264,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
         $payload = $this->addMissingUuid($payload);
         $headers = $this->getHeaders($job);
         $headers = $this->forgetHeadersForRedelivery($headers);
-
+        $headers = $this->setPersistence($headers);
         $headers = $this->setDelayQueue($job, $headers);
 
         $message = new Message(json_encode($payload), $headers);
@@ -304,6 +304,16 @@ class ActiveMQQueue extends Queue implements QueueInterface
         }
 
         return $headers;
+    }
+
+    /**
+     * Defines whether the message should be persistent
+     * @param array $headers
+     * @return array
+     */
+    protected function setPersistence(array $headers) : array
+    {
+        return array_merge($headers, ['persistent' => Config::get('persistent_queues') ? 'true' : 'false']);
     }
 
     /**
