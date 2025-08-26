@@ -1,6 +1,6 @@
 <?php
 
-namespace Elielelie\ActiveMQ\Contracts;;
+namespace Elielelie\ActiveMQ\Contracts;
 
 interface HasRawData
 {
