@@ -1,7 +1,6 @@
 # Laravel ActiveMQ driver
 
 <p align="left">
-<a href="https://travis-ci.org/elielelie/laravel-activemq"><img src="https://img.shields.io/travis/elielelie/laravel-activemq/main.svg" alt="Build Status"></a>
 <a href="https://packagist.org/packages/elielelie/laravel-activemq"><img src="https://poser.pugx.org/elielelie/laravel-activemq/d/total.svg" alt="Total Downloads"></a>
 <a href="https://packagist.org/packages/elielelie/laravel-activemq"><img src="https://poser.pugx.org/elielelie/laravel-activemq/v/stable.svg" alt="Latest Stable Version"></a>
 <a href="https://packagist.org/packages/elielelie/laravel-activemq"><img src="https://poser.pugx.org/elielelie/laravel-activemq/license.svg" alt="License"></a>
@@ -61,6 +60,68 @@ You can turn off this behavior with following `.env` variables:
 * `ACTIVEMQ_BACKOFF_MULTIPLIER` - defaults to `2`. Does nothing if `ACTIVEMQ_AUTO_BACKOFF` is turned off. Increase to make even bigger interval between two failed jobs.
 
 Job will be re-queued to the queue it came from.
+
+## Laravel Horizon Support
+
+This package now supports Laravel Horizon for advanced queue management with multiple workers and auto-scaling capabilities.
+
+### Configuration
+
+To enable Horizon support, add these environment variables:
+
+```
+ACTIVEMQ_HORIZON_ENABLED=true
+ACTIVEMQ_HORIZON_ISOLATE=true
+```
+
+### Horizon Configuration Example
+
+Add this configuration to your `config/horizon.php`:
+
+```php
+'environments' => [
+    'production' => [
+        'activemq-default' => [
+            'connection' => 'activemq',
+            'queue' => ['default'],
+            'balance' => 'simple',
+            'processes' => 3,
+        ],
+        'activemq-emails' => [
+            'connection' => 'activemq', 
+            'queue' => ['email'],
+            'balance' => 'auto',
+            'processes' => 2,
+            'maxProcesses' => 5,
+        ],
+        'activemq-notifications' => [
+            'connection' => 'activemq',
+            'queue' => ['notifications'],
+            'balance' => 'simple', 
+            'processes' => 1,
+        ],
+    ],
+],
+```
+
+### Multiple Queue Setup
+
+You can define multiple queues in your environment configuration:
+
+```
+ACTIVEMQ_QUEUE=default;email;notifications
+```
+
+Each supervisor in Horizon can process specific queues, allowing for:
+- **Worker Isolation**: Different workers for different queue types
+- **Auto-Scaling**: Automatic worker scaling based on queue load
+- **Priority Processing**: Different process counts and strategies per queue
+
+### Balancing Strategies
+
+- **simple**: Fixed number of workers distributed evenly
+- **auto**: Dynamic worker allocation based on queue load
+- **false**: Process queues in order without balancing
 
 ## Logs
 
