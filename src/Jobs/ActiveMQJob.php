@@ -5,11 +5,12 @@ namespace Elielelie\ActiveMQ\Jobs;
 use Elielelie\ActiveMQ\Queue\ActiveMQQueue;
 use Elielelie\ActiveMQ\Queue\Config;
 use Illuminate\Container\Container;
-use Illuminate\Queue\Jobs\Job;
 use Illuminate\Contracts\Queue\Job as JobContract;
+use Illuminate\Queue\Jobs\Job;
 use Illuminate\Queue\Jobs\JobName;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
 use Stomp\Transport\Frame;
 use Stomp\Transport\Message;
@@ -20,25 +21,27 @@ class ActiveMQJob extends Job implements JobContract
     protected const DEFAULT_TRIES = 2;
 
     protected ActiveMQQueue $stompQueue;
+
     protected Frame $frame;
+
     protected LoggerInterface $log;
+
     protected string $session;
 
     protected array $payload;
 
     public function __construct(Container $container, ActiveMQQueue $stompQueue, Frame $frame, string $queue)
     {
-        $this->container        = $container;
-        $this->stompQueue       = $stompQueue;
-        $this->frame            = $frame;
-        $this->connectionName   = 'activemq';
-        $this->queue            = $queue;
-        $this->session          = $this->stompQueue->client->getClient()->getSessionId();
+        $this->container      = $container;
+        $this->stompQueue     = $stompQueue;
+        $this->frame          = $frame;
+        $this->connectionName = 'activemq';
+        $this->queue          = $queue;
+        $this->session        = $this->stompQueue->client->getClient()->getSessionId();
 
-        $this->log = app('activemqLog');
+        $this->log            = app('activemqLog');
 
-        $this->payload = $this->payload();
-
+        $this->payload        = $this->payload();
     }
 
     /**
@@ -50,7 +53,7 @@ class ActiveMQJob extends Job implements JobContract
     {
         // Even though payload() decodes it again, this must be left as is because
         // job failure calls this method and we need headers in DB table as well.
-        $body = json_decode($this->frame->getBody(), true);
+        $body    = json_decode($this->frame->getBody(), true);
         $headers = [$this->stompQueue::HEADERS_KEY => $this->headers()];
 
         return json_encode(array_merge($body, $headers));
@@ -94,7 +97,12 @@ class ActiveMQJob extends Job implements JobContract
      */
     public function getJobId()
     {
-        return Arr::get($this->payload, 'uuid') ?: Arr::get($this->payload, $this->stompQueue::HEADERS_KEY . '.message-id') ?: Str::uuid();
+        // Include queue name in ID for better tracking in Horizon
+        $baseId = Arr::get($this->payload, 'uuid') ?:
+                  Arr::get($this->payload, $this->stompQueue::HEADERS_KEY . '.message-id') ?:
+                  Str::uuid();
+
+        return $this->queue . ':' . $baseId;
     }
 
     /**
@@ -137,7 +145,7 @@ class ActiveMQJob extends Job implements JobContract
 
     protected function getExternalEventName(): string
     {
-        $jobName = 'event';
+        $jobName      = 'event';
         $subscribedTo = $this->getSubscriptionName();
 
         if ($subscribedTo) {
@@ -160,9 +168,9 @@ class ActiveMQJob extends Job implements JobContract
     public function delete()
     {
         $this->log->info("$this->session [STOMP] Deleting a message from queue: " . print_r([
-                'queue'   => $this->queue,
-                'message' => $this->frame,
-            ], true));
+            'queue'   => $this->queue,
+            'message' => $this->frame,
+        ], true));
 
         parent::delete();
     }
@@ -184,15 +192,15 @@ class ActiveMQJob extends Job implements JobContract
 
     protected function createStompPayload(int $delay): Message
     {
-        $attempts = $this->attempts() + 1;
+        $attempts    = $this->attempts() + 1;
         Arr::set($this->payload, 'attempts', $attempts);
 
-        $backoff = Config::get('auto_backoff') ? $this->getBackoff($attempts) : $delay;
+        $backoff     = Config::get('auto_backoff') ? $this->getBackoff($attempts) : $delay;
         Arr::set($this->payload, 'backoff', $backoff);
 
         $delayHeader = $this->stompQueue->makeDelayHeader($backoff);
-        $headers = array_merge($this->headers(), $delayHeader);
-        $headers = $this->stompQueue->forgetHeadersForRedelivery($headers);
+        $headers     = array_merge($this->headers(), $delayHeader);
+        $headers     = $this->stompQueue->forgetHeadersForRedelivery($headers);
 
         return new Message(json_encode($this->payload), $headers);
     }
@@ -215,13 +223,13 @@ class ActiveMQJob extends Job implements JobContract
     /**
      * Process an exception that caused the job to fail.
      *
-     * @param  Throwable|null  $e
+     * @param  Throwable|null $e
      * @return void
      */
     protected function failed($e)
     {
         // External events don't have failed method to call.
-        if (!$this->payload || !$this->isNativeLaravelJob()) {
+        if (! $this->payload || ! $this->isNativeLaravelJob()) {
             return;
         }
 
