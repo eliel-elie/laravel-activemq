@@ -11,10 +11,10 @@ use Elielelie\ActiveMQ\Helpers\IntervalToMilliseconds;
 use Elielelie\ActiveMQ\Jobs\ActiveMQJob;
 use Exception;
 use Illuminate\Broadcasting\BroadcastEvent;
+use Illuminate\Contracts\Queue\Queue as QueueInterface;
 use Illuminate\Queue\CallQueuedClosure;
 use Illuminate\Queue\InvalidPayloadException;
 use Illuminate\Queue\Queue;
-use Illuminate\Contracts\Queue\Queue as QueueInterface;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Psr\Log\LoggerInterface;
@@ -25,9 +25,9 @@ use Stomp\Transport\Message;
 
 class ActiveMQQueue extends Queue implements QueueInterface
 {
-    public const AMQ_QUEUE_SEPARATOR = '::';
-    public const HEADERS_KEY         = '_headers';
-    const CORRELATION                = 'X-Correlation-ID';
+    public const AMQ_QUEUE_SEPARATOR      = '::';
+    public const HEADERS_KEY              = '_headers';
+    const CORRELATION                     = 'X-Correlation-ID';
 
     /**
      * Stomp instance from stomp-php repo.
@@ -35,33 +35,37 @@ class ActiveMQQueue extends Queue implements QueueInterface
     public StatefulStomp $client;
 
     public array $readQueues;
+
     public array $writeQueues;
 
     /**
      * List of queues already subscribed to. Preventing multiple same subscriptions.
-     *
-     * @var array
      */
-    protected array $subscribedTo = [];
+    protected array $subscribedTo         = [];
+
+    /**
+     * Queues specific to this worker instance (for Horizon support).
+     */
+    protected array $workerSpecificQueues = [];
 
     protected LoggerInterface $log;
-    protected static int $circuitBreaker = 0;
+
+    protected static int $circuitBreaker  = 0;
+
     protected string $session;
 
     public function __construct(ClientWrapper $stompClient)
     {
-        $this->readQueues   = $this->setReadQueues();
-        $this->writeQueues  = $this->setWriteQueues();
-        $this->client       = $stompClient->client;
-        $this->log          = app('activemqLog');
+        $this->readQueues  = $this->setReadQueues();
+        $this->writeQueues = $this->setWriteQueues();
+        $this->client      = $stompClient->client;
+        $this->log         = app('activemqLog');
 
-        $this->session = $this->client->getClient()->getSessionId();
+        $this->session     = $this->client->getClient()->getSessionId();
     }
 
     /**
      * Append queue name to topic/address to avoid random hashes in broker.
-     *
-     * @return array
      */
     protected function setReadQueues(): array
     {
@@ -70,7 +74,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
         foreach ($queues as &$queue) {
             $default = Config::defaultQueue();
 
-            if (!str_contains($queue, self::AMQ_QUEUE_SEPARATOR)) {
+            if (! str_contains($queue, self::AMQ_QUEUE_SEPARATOR)) {
                 continue;
             }
 
@@ -78,7 +82,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
                 $topic     = Str::before($queue, self::AMQ_QUEUE_SEPARATOR);
                 $queueName = Str::after($queue, self::AMQ_QUEUE_SEPARATOR);
 
-                $queue = $topic . self::AMQ_QUEUE_SEPARATOR . "{$topic}_{$default}_{$queueName}";
+                $queue     = $topic . self::AMQ_QUEUE_SEPARATOR . "{$topic}_{$default}_{$queueName}";
             }
         }
 
@@ -93,7 +97,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * Get the size of the queue.
      *
-     * @param  string|null  $queue
+     * @param  string|null $queue
      * @return int
      */
     public function size($queue = null)
@@ -104,9 +108,9 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * Push a new job onto the queue.
      *
-     * @param  string|object  $job
-     * @param  mixed  $data
-     * @param  string|null  $queue
+     * @param  string|object $job
+     * @param  mixed         $data
+     * @param  string|null   $queue
      * @return mixed
      */
     public function push($job, $data = '', $queue = null)
@@ -117,10 +121,10 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * Push a new job onto the queue after a delay.
      *
-     * @param  DateTimeInterface|DateInterval|int  $delay
-     * @param  string|object  $job
-     * @param  mixed  $data
-     * @param  string|null  $queue
+     * @param  DateTimeInterface|DateInterval|int $delay
+     * @param  string|object                      $job
+     * @param  mixed                              $data
+     * @param  string|null                        $queue
      * @return mixed
      */
     public function later($delay, $job, $data = '', $queue = null)
@@ -131,18 +135,17 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * Push a raw payload onto the queue.
      *
-     * @param  mixed  $payload
-     * @param  string|null  $queue
-     * @param  array  $options
+     * @param  mixed       $payload
+     * @param  string|null $queue
      * @return mixed
      */
     public function pushRaw($payload, $queue = null, array $options = [])
     {
-        if (!$payload instanceof Message) {
+        if (! $payload instanceof Message) {
             $payload = $this->wrapStompMessage($payload);
         }
 
-        $payload = $this->addCorrelationHeader($payload);
+        $payload     = $this->addCorrelationHeader($payload);
 
         $writeQueues = $queue ? $this->parseQueues($queue) : $this->writeQueues;
 
@@ -150,12 +153,12 @@ class ActiveMQQueue extends Queue implements QueueInterface
     }
 
     /**
-     * @param  Frame  $payload
+     * @param  Frame $payload
      * @return mixed
      */
     protected function addCorrelationHeader($payload)
     {
-        if (!$this->needsHeader($payload, self::CORRELATION)) {
+        if (! $this->needsHeader($payload, self::CORRELATION)) {
             return $payload;
         }
 
@@ -171,52 +174,46 @@ class ActiveMQQueue extends Queue implements QueueInterface
     }
 
     /**
-     * @param  Frame  $payload
-     * @param  string  $header
-     * @return bool
+     * @param Frame $payload
      */
     protected function needsHeader($payload, string $header): bool
     {
         $headers = $payload->getHeaders();
 
-        return !Arr::has($headers, [$header]);
+        return ! Arr::has($headers, [$header]);
     }
 
     protected function wrapStompMessage(string $payload): Message
     {
-        $decoded    = json_decode($payload, true);
-        $body       = Arr::except($decoded, self::HEADERS_KEY);
-        $body       = $this->addMissingUuid($body);
-        $headers    = Arr::get($decoded, self::HEADERS_KEY, []);
-        $headers    = $this->forgetHeadersForRedelivery($headers);
+        $decoded = json_decode($payload, true);
+        $body    = Arr::except($decoded, self::HEADERS_KEY);
+        $body    = $this->addMissingUuid($body);
+        $headers = Arr::get($decoded, self::HEADERS_KEY, []);
+        $headers = $this->forgetHeadersForRedelivery($headers);
 
         return new Message(json_encode($body), $headers);
     }
 
-    /**
-     * @param  array  $writeQueues
-     * @param  Message  $payload
-     * @return bool
-     */
     protected function writeToMultipleQueues(array $writeQueues, Message $payload): bool
     {
         /**
          * @var $payload Message
          */
         $this->log->info("$this->session [STOMP] Pushing stomp payload to queue: " . print_r([
-                'body'    => $payload->getBody(),
-                'headers' => $payload->getHeaders(),
-                'queue'   => $writeQueues,
-            ], true));
+            'body'    => $payload->getBody(),
+            'headers' => $payload->getHeaders(),
+            'queue'   => $writeQueues,
+        ], true));
 
         $allEventsSent = true;
 
         foreach ($writeQueues as $writeQueue) {
             $sent = $this->write($writeQueue, $payload);
 
-            if (!$sent) {
+            if (! $sent) {
                 $allEventsSent = false;
                 $this->log->error("$this->session [STOMP] Message not sent on queue: $writeQueue");
+
                 continue;
             }
 
@@ -249,8 +246,6 @@ class ActiveMQQueue extends Queue implements QueueInterface
      * Overridden to prevent double json encoding/decoding
      * Create a payload string from the given job and data.
      *
-     * @param $job
-     * @param $queue
      * @param  string  $data
      * @return Message
      */
@@ -278,14 +273,9 @@ class ActiveMQQueue extends Queue implements QueueInterface
         return $message;
     }
 
-    /**
-     * @param $job
-     * @return array
-     */
     protected function setDelayQueue($job, $headers): array
     {
-        if($job->delay) {
-
+        if ($job->delay) {
             $schedule = 0;
 
             if ($job->delay instanceof DateInterval) {
@@ -300,7 +290,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
                 $schedule = $job->delay * 1000;
             }
 
-            $headers =  array_merge($headers, ['AMQ_SCHEDULED_DELAY' => $schedule]);
+            $headers  = array_merge($headers, ['AMQ_SCHEDULED_DELAY' => $schedule]);
         }
 
         return $headers;
@@ -308,10 +298,8 @@ class ActiveMQQueue extends Queue implements QueueInterface
 
     /**
      * Defines whether the message should be persistent
-     * @param array $headers
-     * @return array
      */
-    protected function setPersistence(array $headers) : array
+    protected function setPersistence(array $headers): array
     {
         return array_merge($headers, ['persistent' => Config::get('persistent_queues') ? 'true' : 'false']);
     }
@@ -320,9 +308,9 @@ class ActiveMQQueue extends Queue implements QueueInterface
      * Overridden to support raw data
      * Create a payload array from the given job and data.
      *
-     * @param  object|string  $job
-     * @param  string  $queue
-     * @param  string  $data
+     * @param  object|string $job
+     * @param  string        $queue
+     * @param  string        $data
      * @return array
      */
     protected function createPayloadArray($job, $queue, $data = '')
@@ -340,7 +328,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
 
     protected function addMissingUuid(array $payload): array
     {
-        if (!Arr::has($payload, 'uuid')) {
+        if (! Arr::has($payload, 'uuid')) {
             $payload['uuid'] = (string) Str::uuid();
         }
 
@@ -368,14 +356,20 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * Pop the next job off of the queue.
      *
-     * @param  string|null  $queue
+     * @param  string|null $queue
      * @return ActiveMQJob
      */
     public function pop($queue = null)
     {
-        $frame = $this->read($queue);
+        // If a specific queue was passed, read only from it
+        if ($queue !== null) {
+            $frame = $this->readFromSpecificQueue($queue);
+        } else {
+            // Current behavior - read from configured queues
+            $frame = $this->read($queue);
+        }
 
-        if (!($frame instanceof Frame)) {
+        if (! ($frame instanceof Frame)) {
             return null;
         }
 
@@ -387,7 +381,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
         // MESSAGE one, which was a bug introduced at one point. Keeping it as safety measure
         $queueFromFrame = $this->getQueueFromFrame($frame);
 
-        if (!$queueFromFrame) {
+        if (! $queueFromFrame) {
             $this->log->error("$this->session [STOMP] Wrong frame received. Expected MESSAGE, got: " . print_r($frame, true));
 
             return null;
@@ -443,13 +437,10 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * If these values are left in the header, it will screw up the whole event redelivery
      * so we need to remove them before sending back to queue.
-     *
-     * @param  array  $headers
-     * @return array
      */
     public function forgetHeadersForRedelivery(array $headers): array
     {
-        $keys = array_keys($headers);
+        $keys       = array_keys($headers);
         $amqMatches = preg_grep('/_AMQ.*/i', $keys);
 
         Arr::forget($headers, array_merge($amqMatches, ['content-length']));
@@ -501,7 +492,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
 
     public function disconnect()
     {
-        if (!$this->client->getClient()->isConnected()) {
+        if (! $this->client->getClient()->isConnected()) {
             return;
         }
 
@@ -515,8 +506,13 @@ class ActiveMQQueue extends Queue implements QueueInterface
 
     protected function subscribeToQueues(): void
     {
-        foreach ($this->readQueues as $queue) {
-            $alreadySubscribed = in_array($queue, $this->subscribedTo);
+        // If there are worker-specific queues, use them instead of all read queues
+        $queuesToSubscribe = ! empty($this->workerSpecificQueues)
+            ? $this->workerSpecificQueues
+            : $this->readQueues;
+
+        foreach ($queuesToSubscribe as $queue) {
+            $alreadySubscribed    = in_array($queue, $this->subscribedTo);
 
             if ($alreadySubscribed) {
                 continue;
@@ -529,5 +525,79 @@ class ActiveMQQueue extends Queue implements QueueInterface
 
             $this->subscribedTo[] = $queue;
         }
+    }
+
+    /**
+     * Set specific queues for this worker instance (Horizon support).
+     */
+    public function setWorkerQueues(array $queues): void
+    {
+        $this->workerSpecificQueues = $queues;
+        $this->log->info("$this->session [STOMP] Worker queues set to: " . implode(', ', $queues));
+
+        // Resubscribe to the new queues
+        $this->resubscribeToQueues();
+    }
+
+    /**
+     * Resubscribe to queues (useful when worker-specific queues are set).
+     */
+    protected function resubscribeToQueues(): void
+    {
+        // Clear current subscriptions
+        $this->subscribedTo = [];
+
+        // If connected, disconnect and reconnect to refresh subscriptions
+        if ($this->client->getClient()->isConnected()) {
+            $this->disconnect();
+            $this->client->getClient()->connect();
+        }
+
+        // Subscribe to the appropriate queues
+        $this->subscribeToQueues();
+    }
+
+    /**
+     * Read from a specific queue (for Horizon worker isolation).
+     *
+     * @return Frame|null
+     */
+    protected function readFromSpecificQueue(string $specificQueue)
+    {
+        try {
+            $this->log->info("$this->session [STOMP] POP from specific queue: $specificQueue");
+
+            $this->heartbeat();
+            $this->subscribeToSpecificQueue($specificQueue);
+
+            $frame = $this->client->read();
+            $this->log->info("$this->session [STOMP] Message read from specific queue!");
+
+            return $frame;
+        } catch (Exception $e) {
+            $this->log->error("$this->session [STOMP] Stomp failed to read from specific queue '$specificQueue'. " . $e->getMessage());
+            $this->reconnect();
+
+            $this->log->info("$this->session [STOMP] Re-reading from specific queue...");
+
+            return $this->readFromSpecificQueue($specificQueue);
+        }
+    }
+
+    /**
+     * Subscribe to a specific queue.
+     */
+    protected function subscribeToSpecificQueue(string $queue): void
+    {
+        if (in_array($queue, $this->subscribedTo)) {
+            return;
+        }
+
+        $this->client->subscribe($queue, null, 'auto', [
+            'consumer-window-size' => '-1',
+        ]);
+
+        $this->subscribedTo[] = $queue;
+        $this->log->info("$this->session [STOMP] Subscribed to specific queue: $queue");
     }
 }
