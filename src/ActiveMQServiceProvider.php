@@ -15,6 +15,7 @@ class ActiveMQServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
+     *
      * @return void
      */
     public function register()
@@ -38,7 +39,7 @@ class ActiveMQServiceProvider extends ServiceProvider
         app()->singleton(ActiveMQQueue::class);
 
         /** @var QueueManager $queue */
-        $queue = $this->app['queue'];
+        $queue       = $this->app['queue'];
 
         $queue->addConnector('activemq', function () {
             return new StompConnector($this->app['events']);
@@ -47,14 +48,12 @@ class ActiveMQServiceProvider extends ServiceProvider
         $logsEnabled = Config::get('enable_logs');
 
         app()->singleton('activemqLog', function ($app) use ($logsEnabled) {
-
             $logManager = config('log-activemq.log_manager');
-            return $logsEnabled ? new $logManager($app) : new NullLogger();
 
+            return $logsEnabled ? new $logManager($app) : new NullLogger();
         });
 
         $this->registerPublishables();
-
     }
 
     public function registerPublishables()
@@ -65,5 +64,4 @@ class ActiveMQServiceProvider extends ServiceProvider
             ], 'activemq-config');
         }
     }
-
 }
