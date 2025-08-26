@@ -15,13 +15,12 @@ class ClientWrapper
     /**
      * ClientWrapper constructor.
      *
-     * @param  ConnectionWrapper  $connectionWrapper
      *
      * @throws StompException
      */
     public function __construct(ConnectionWrapper $connectionWrapper)
     {
-        $client = new Client($connectionWrapper->connection);
+        $client       = new Client($connectionWrapper->connection);
         $this->setCredentials($client);
 
         $client->setSync(false);
@@ -29,13 +28,12 @@ class ClientWrapper
         $client->setClientId(Str::uuid()->toString());
         $client->setVersions(Config::get('version'));
 
-        $emitter = new HeartbeatEmitter($client->getConnection());
+        $emitter      = new HeartbeatEmitter($client->getConnection());
         $client->getConnection()->getObservers()->addObserver($emitter);
 
         $this->client = new StatefulStomp($client);
 
         $client->connect();
-
     }
 
     protected function setCredentials(Client $client): void
