@@ -15,17 +15,17 @@ class Config
 
     public static function defaultQueue(): string
     {
-        return self::get('default_queue') ?: self::appName();
+        return self::get('default_queue') ?: 'default';
     }
 
     public static function readQueues(): string
     {
-        return self::get('read_queues') ?: self::appName();
+        return self::get('read_queues') ?: 'default';
     }
 
     public static function writeQueues(): string
     {
-        return self::get('write_queues') ?: self::appName();
+        return self::get('write_queues') ?: 'default';
     }
 
     protected static function appName(): string
@@ -37,6 +37,4 @@ class Config
     {
         return self::get('persistent_queues');
     }
-
-
 }
