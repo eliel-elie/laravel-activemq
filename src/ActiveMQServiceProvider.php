@@ -2,6 +2,7 @@
 
 namespace Elielelie\ActiveMQ;
 
+use Elielelie\ActiveMQ\Commands\TestActiveMQConnection;
 use Elielelie\ActiveMQ\Connectors\StompConnector;
 use Elielelie\ActiveMQ\Queue\ActiveMQQueue;
 use Elielelie\ActiveMQ\Queue\ClientWrapper;
@@ -15,10 +16,8 @@ class ActiveMQServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
-     *
-     * @return void
      */
-    public function register()
+    public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/log-activemq.php', 'log-activemq');
 
@@ -54,14 +53,24 @@ class ActiveMQServiceProvider extends ServiceProvider
         });
 
         $this->registerPublishables();
+        $this->registerCommands();
     }
 
-    public function registerPublishables()
+    public function registerPublishables(): void
     {
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/../config/activemq.php' => config_path('activemq.php'),
             ], 'activemq-config');
+        }
+    }
+
+    public function registerCommands(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                TestActiveMQConnection::class,
+            ]);
         }
     }
 }
