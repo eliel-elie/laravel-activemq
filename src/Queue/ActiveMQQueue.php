@@ -106,6 +106,14 @@ class ActiveMQQueue extends Queue implements QueueInterface
     }
 
     /**
+     * Get the number of ready jobs for a given queue.
+     */
+    public function readyNow(string $queue = null): int
+    {
+        return $this->size($queue);
+    }
+
+    /**
      * Push a new job onto the queue.
      *
      * @param  string|object $job

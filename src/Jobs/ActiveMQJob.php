@@ -6,6 +6,9 @@ use Elielelie\ActiveMQ\Queue\ActiveMQQueue;
 use Elielelie\ActiveMQ\Queue\Config;
 use Illuminate\Container\Container;
 use Illuminate\Contracts\Queue\Job as JobContract;
+use Illuminate\Queue\Events\JobExceptionOccurred;
+use Illuminate\Queue\Events\JobProcessed;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Queue\Jobs\Job;
 use Illuminate\Queue\Jobs\JobName;
 use Illuminate\Support\Arr;
@@ -46,10 +49,8 @@ class ActiveMQJob extends Job implements JobContract
 
     /**
      * Get the raw body string for the job.
-     *
-     * @return string
      */
-    public function getRawBody()
+    public function getRawBody(): string
     {
         // Even though payload() decodes it again, this must be left as is because
         // job failure calls this method and we need headers in DB table as well.
@@ -117,6 +118,33 @@ class ActiveMQJob extends Job implements JobContract
         $this->isNativeLaravelJob() ? $this->fireLaravelJob() : $this->fireExternalJob();
     }
 
+    protected function raiseBeforeEvent(): void
+    {
+        if ($this->container->bound('events')) {
+            $this->container['events']->dispatch(
+                new JobProcessing($this->connectionName, $this)
+            );
+        }
+    }
+
+    protected function raiseAfterEvent(): void
+    {
+        if ($this->container->bound('events')) {
+            $this->container['events']->dispatch(
+                new JobProcessed($this->connectionName, $this)
+            );
+        }
+    }
+
+    protected function raiseExceptionOccurredEvent(Throwable $e): void
+    {
+        if ($this->container->bound('events')) {
+            $this->container['events']->dispatch(
+                new JobExceptionOccurred($this->connectionName, $this, $e)
+            );
+        }
+    }
+
     protected function isNativeLaravelJob(): bool
     {
         return array_key_exists('job', $this->payload);
@@ -162,10 +190,8 @@ class ActiveMQJob extends Job implements JobContract
 
     /**
      * Delete the job from the queue.
-     *
-     * @return void
      */
-    public function delete()
+    public function delete(): void
     {
         parent::delete();
 
@@ -180,10 +206,9 @@ class ActiveMQJob extends Job implements JobContract
     /**
      * Release the job back into the queue.
      *
-     * @param  int  $delay
-     * @return void
+     * @param int $delay
      */
-    public function release($delay = 0)
+    public function release($delay = 0): void
     {
         parent::release($delay);
 

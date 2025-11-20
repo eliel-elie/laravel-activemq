@@ -3,6 +3,8 @@
 namespace Elielelie\ActiveMQ\Commands;
 
 use Illuminate\Console\Command;
+use Stomp\Client;
+use Stomp\Exception\ConnectionException;
 
 class TestActiveMQConnection extends Command
 {
