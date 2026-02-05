@@ -137,7 +137,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
      */
     public function later($delay, $job, $data = '', $queue = null)
     {
-        return $this->pushRaw($this->createPayload($job, $data, $queue), $queue);
+        return $this->pushRaw($this->createPayload($job, $queue, $data), $queue);
     }
 
     /**
