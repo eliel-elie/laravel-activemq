@@ -10,7 +10,15 @@ class Config
 
     public static function get($key)
     {
-        return config(self::CONFIG_ARRAY_PATH . $key);
+        // Try to get from the specific activemq connection first
+        $value = config(self::CONFIG_ARRAY_PATH . $key);
+
+        // Fallback to the top-level activemq config if not found in the connection
+        if ($value === null) {
+            $value = config('activemq.' . $key);
+        }
+
+        return $value;
     }
 
     public static function defaultQueue(): string
@@ -35,6 +43,8 @@ class Config
 
     public static function getPersistent(): bool
     {
-        return self::get('persistent_queues');
+        return self::get('persistent_queues') === true ||
+               self::get('persistent') === true ||
+               filter_var(env('ACTIVEMQ_PERSISTENT', false), FILTER_VALIDATE_BOOLEAN);
     }
 }

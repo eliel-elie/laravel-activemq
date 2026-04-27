@@ -137,7 +137,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
      */
     public function later($delay, $job, $data = '', $queue = null)
     {
-        return $this->pushRaw($this->createPayload($job, $data, $queue), $queue);
+        return $this->pushRaw($this->createPayload($job, $queue, $data), $queue);
     }
 
     /**
@@ -154,10 +154,26 @@ class ActiveMQQueue extends Queue implements QueueInterface
         }
 
         $payload     = $this->addCorrelationHeader($payload);
+        $payload     = $this->addPersistenceHeader($payload);
 
         $writeQueues = $queue ? $this->parseQueues($queue) : $this->writeQueues;
 
         return $this->writeToMultipleQueues($writeQueues, $payload);
+    }
+
+    /**
+     * @param  Frame   $payload
+     * @return Message
+     */
+    protected function addPersistenceHeader($payload)
+    {
+        if (! $this->needsHeader($payload, 'persistent')) {
+            return $payload;
+        }
+
+        $payload->addHeaders(['persistent' => Config::getPersistent() ? 'true' : 'false']);
+
+        return $payload;
     }
 
     /**
@@ -267,7 +283,6 @@ class ActiveMQQueue extends Queue implements QueueInterface
         $payload = $this->addMissingUuid($payload);
         $headers = $this->getHeaders($job);
         $headers = $this->forgetHeadersForRedelivery($headers);
-        $headers = $this->setPersistence($headers);
         $headers = $this->setDelayQueue($job, $headers);
 
         $message = new Message(json_encode($payload), $headers);
