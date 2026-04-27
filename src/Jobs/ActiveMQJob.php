@@ -103,7 +103,7 @@ class ActiveMQJob extends Job implements JobContract
                   Arr::get($this->payload, $this->stompQueue::HEADERS_KEY . '.message-id') ?:
                   Str::uuid();
 
-        return $this->queue . ':' . $baseId;
+        return $baseId;
     }
 
     /**
