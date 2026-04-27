@@ -22,6 +22,7 @@ use Stomp\Exception\ConnectionException;
 use Stomp\StatefulStomp;
 use Stomp\Transport\Frame;
 use Stomp\Transport\Message;
+use Throwable;
 
 class ActiveMQQueue extends Queue implements QueueInterface
 {
@@ -622,5 +623,24 @@ class ActiveMQQueue extends Queue implements QueueInterface
 
         $this->subscribedTo[] = $queue;
         $this->log->info("$this->session [STOMP] Subscribed to specific queue: $queue");
+    }
+
+    public function healthCheck(): bool
+    {
+        try {
+            $client = $this->client->getClient();
+
+            if ($client->isConnected() && $client->getSessionId()) {
+                return true;
+            }
+
+            $client->connect();
+
+            return $client->isConnected();
+        } catch (Throwable $e) {
+            $this->log->error('[STOMP] HealthCheck failed: ' . $e->getMessage());
+
+            return false;
+        }
     }
 }

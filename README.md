@@ -43,6 +43,52 @@ You can publish the configuration file by running:
 
 ```$ php artisan vendor:publish --provider="Elielelie\ActiveMQ\ActiveMQServiceProvider" ```
 
+## Usage
+
+### Dispatching Jobs
+
+You can dispatch jobs to ActiveMQ just like any other Laravel queue driver:
+
+```php
+use App\Jobs\ProcessOrder;
+
+// Dispatch to the default queue
+ProcessOrder::dispatch($order);
+
+// Dispatch to a specific queue
+ProcessOrder::dispatch($order)->onQueue('orders');
+```
+
+### Delayed Jobs (Scheduling)
+
+The driver supports delayed jobs using the `later` method or `delay()` helper:
+
+```php
+// Delay job execution by 10 minutes
+ProcessOrder::dispatch($order)->delay(now()->addMinutes(10));
+```
+
+### Message Persistence
+
+By default, messages are sent according to the `ACTIVEMQ_PERSISTENT` environment variable. 
+
+- To ensure messages survive a broker restart, set `ACTIVEMQ_PERSISTENT=true`.
+- If you need to override headers for a specific job, you can implement the `HasHeaders` contract in your Job class.
+
+### Health Check
+
+You can verify the connection to the ActiveMQ broker using the `healthCheck` method on the connection:
+
+```php
+use Illuminate\Support\Facades\Queue;
+
+$isConnected = Queue::connection('activemq')->healthCheck();
+
+if (!$isConnected) {
+    // Handle connection failure
+}
+```
+
 ## Failed jobs
 
 For the sake of simplicity and brevity ActiveMQJob class is defined in a way to utilize Laravel tries and backoff properties out of the box ([official documentation](https://laravel.com/docs/8.x/queues#dealing-with-failed-jobs)).
