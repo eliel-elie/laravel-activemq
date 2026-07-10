@@ -17,23 +17,6 @@ jobs:
       matrix:
         php: [8.2, 8.3, 8.4]
         laravel: [10.*, 11.*, 12.*, 13.*]
-        include:
-          - laravel: 10.*
-            testbench: 8.*
-            pest: ^2.34
-            pest-plugin: ^2.0
-          - laravel: 11.*
-            testbench: 9.*
-            pest: ^3.8
-            pest-plugin: ^3.2
-          - laravel: 12.*
-            testbench: 10.*
-            pest: ^3.8
-            pest-plugin: ^3.2
-          - laravel: 13.*
-            testbench: 11.*
-            pest: ^4.0
-            pest-plugin: ^4.0
         exclude:
           - php: 8.2
             laravel: 13.*
@@ -60,10 +43,8 @@ jobs:
         run: |
           # Align core framework dependencies
           composer require "illuminate/support:${{ matrix.laravel }}" "illuminate/queue:${{ matrix.laravel }}" --no-interaction --no-update
-          # Align corresponding Testbench, Pest, and Pest Plugin versions as development dependencies
-          composer require "orchestra/testbench:${{ matrix.testbench }}" "pestphp/pest:${{ matrix.pest }}" "pestphp/pest-plugin-laravel:${{ matrix.pest-plugin }}" --dev --no-interaction --no-update
           # Use composer update to resolve and install matrix versions
-          composer update --prefer-dist --no-interaction --no-progress
+          composer update --prefer-dist --no-interaction --no-progress -W
 
       - name: Run Pint
         run: ./vendor/bin/pint --test
