@@ -11,7 +11,9 @@
     ],
 	"license": "MIT",
     "require": {
-		"php": "^7.4|^8.0",
+        "php": "^8.0",
+        "illuminate/queue": "^9.0|^10.0|^11.0|^12.0|^13.0",
+        "illuminate/support": "^9.0|^10.0|^11.0|^12.0|^13.0",
         "stomp-php/stomp-php": "^5.0"
     },
 	"autoload": {
@@ -36,5 +38,16 @@
                 }
             ]
         }
-    }
+    },
+	"require-dev": {
+		"pestphp/pest": "^3.8",
+		"pestphp/pest-plugin-laravel": "^3.2",
+		"orchestra/testbench": "^10.11",
+		"laravel/pint": "^1.29"
+	},
+	"config": {
+		"allow-plugins": {
+			"pestphp/pest-plugin": true
+		}
+	}
 }

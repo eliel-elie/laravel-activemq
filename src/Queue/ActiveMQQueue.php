@@ -138,7 +138,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
      */
     public function later($delay, $job, $data = '', $queue = null)
     {
-        return $this->pushRaw($this->createPayload($job, $queue, $data), $queue);
+        return $this->pushRaw($this->createPayload($job, $queue, $data, $delay), $queue);
     }
 
     /**
@@ -274,7 +274,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
      * @param  string  $data
      * @return Message
      */
-    protected function createPayload($job, $queue, $data = '')
+    protected function createPayload($job, $queue, $data = '', $delay = null)
     {
         if ($job instanceof Closure) {
             $job = CallQueuedClosure::create($job);
@@ -284,7 +284,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
         $payload = $this->addMissingUuid($payload);
         $headers = $this->getHeaders($job);
         $headers = $this->forgetHeadersForRedelivery($headers);
-        $headers = $this->setDelayQueue($job, $headers);
+        $headers = $this->setDelayQueue($job, $headers, $delay);
 
         $message = new Message(json_encode($payload), $headers);
 
@@ -297,21 +297,23 @@ class ActiveMQQueue extends Queue implements QueueInterface
         return $message;
     }
 
-    protected function setDelayQueue($job, $headers): array
+    protected function setDelayQueue($job, $headers, $delay = null): array
     {
-        if ($job->delay) {
+        $delay = $delay ?? (is_object($job) && property_exists($job, 'delay') ? $job->delay : null);
+
+        if ($delay) {
             $schedule = 0;
 
-            if ($job->delay instanceof DateInterval) {
-                $schedule = IntervalToMilliseconds::convert($job->delay);
+            if ($delay instanceof DateInterval) {
+                $schedule = IntervalToMilliseconds::convert($delay);
             }
 
-            if ($job->delay instanceof DateTimeInterface) {
-                $schedule = IntervalToMilliseconds::convert(now()->diff($job->delay));
+            if ($delay instanceof DateTimeInterface) {
+                $schedule = IntervalToMilliseconds::convert(now()->diff($delay));
             }
 
-            if (is_int($job->delay)) {
-                $schedule = $job->delay * 1000;
+            if (is_int($delay)) {
+                $schedule = $delay * 1000;
             }
 
             $headers  = array_merge($headers, ['AMQ_SCHEDULED_DELAY' => $schedule]);
