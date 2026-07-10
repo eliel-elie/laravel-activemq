@@ -46,9 +46,14 @@ jobs:
           coverage: none
 
       - name: Install dependencies
+        env:
+          COMPOSER_NO_BLOCKING: 1
+          COMPOSER_NO_SECURITY_BLOCKING: 1
         run: |
-          # Align core framework dependencies and corresponding Testbench version
-          composer require "illuminate/support:${{ matrix.laravel }}" "illuminate/queue:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          # Align core framework dependencies
+          composer require "illuminate/support:${{ matrix.laravel }}" "illuminate/queue:${{ matrix.laravel }}" --no-interaction --no-update
+          # Align corresponding Testbench version as a development dependency
+          composer require "orchestra/testbench:${{ matrix.testbench }}" --dev --no-interaction --no-update
           # Use composer update to resolve and install matrix versions
           composer update --prefer-dist --no-interaction --no-progress
 
