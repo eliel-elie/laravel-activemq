@@ -109,7 +109,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * Get the number of ready jobs for a given queue.
      */
-    public function readyNow(string $queue = null): int
+    public function readyNow(?string $queue = null): int
     {
         return $this->size($queue);
     }
@@ -288,7 +288,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
 
         $message = new Message(json_encode($payload), $headers);
 
-        if (JSON_ERROR_NONE !== json_last_error()) {
+        if (json_last_error() !== JSON_ERROR_NONE) {
             throw new InvalidPayloadException(
                 'Unable to JSON encode payload. Error code: ' . json_last_error()
             );
