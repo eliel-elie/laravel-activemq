@@ -4,12 +4,14 @@ namespace Elielelie\ActiveMQ;
 
 use Elielelie\ActiveMQ\Commands\TestActiveMQConnection;
 use Elielelie\ActiveMQ\Connectors\StompConnector;
+use Elielelie\ActiveMQ\Listeners\HorizonEventSubscriber;
 use Elielelie\ActiveMQ\Queue\ActiveMQQueue;
 use Elielelie\ActiveMQ\Queue\ClientWrapper;
 use Elielelie\ActiveMQ\Queue\Config;
 use Elielelie\ActiveMQ\Queue\ConnectionWrapper;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Horizon\Contracts\JobRepository;
 use Psr\Log\NullLogger;
 
 class ActiveMQServiceProvider extends ServiceProvider
@@ -38,19 +40,25 @@ class ActiveMQServiceProvider extends ServiceProvider
         app()->singleton(ActiveMQQueue::class);
 
         /** @var QueueManager $queue */
-        $queue       = $this->app['queue'];
+        $queue          = $this->app['queue'];
 
         $queue->addConnector('activemq', function () {
             return new StompConnector($this->app['events']);
         });
 
-        $logsEnabled = Config::get('enable_logs');
+        $logsEnabled    = Config::get('enable_logs');
 
         app()->singleton('activemqLog', function ($app) use ($logsEnabled) {
             $logManager = config('log-activemq.log_manager');
 
-            return $logsEnabled ? new $logManager($app) : new NullLogger();
+            return $logsEnabled ? new $logManager($app) : new NullLogger;
         });
+
+        $horizonEnabled = config('queue.connections.activemq.horizon.enabled') || config('activemq.horizon.enabled');
+
+        if ($horizonEnabled && $this->app->bound(JobRepository::class)) {
+            $this->app['events']->subscribe(HorizonEventSubscriber::class);
+        }
 
         $this->registerPublishables();
         $this->registerCommands();
