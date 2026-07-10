@@ -32,8 +32,8 @@ jobs:
             pest-plugin: ^3.2
           - laravel: 13.*
             testbench: 11.*
-            pest: ^3.8
-            pest-plugin: ^3.2
+            pest: ^4.0
+            pest-plugin: ^4.0
         exclude:
           - php: 8.2
             laravel: 13.*
