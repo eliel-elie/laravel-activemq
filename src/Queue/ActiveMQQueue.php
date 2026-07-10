@@ -115,6 +115,50 @@ class ActiveMQQueue extends Queue implements QueueInterface
     }
 
     /**
+     * Get the number of pending jobs for a given queue.
+     *
+     * @param  string|null  $queue
+     * @return int
+     */
+    public function pendingSize($queue = null): int
+    {
+        return $this->size($queue);
+    }
+
+    /**
+     * Get the number of delayed jobs for a given queue.
+     *
+     * @param  string|null  $queue
+     * @return int
+     */
+    public function delayedSize($queue = null): int
+    {
+        return 0;
+    }
+
+    /**
+     * Get the number of reserved jobs for a given queue.
+     *
+     * @param  string|null  $queue
+     * @return int
+     */
+    public function reservedSize($queue = null): int
+    {
+        return 0;
+    }
+
+    /**
+     * Get the creation time of the oldest pending job.
+     *
+     * @param  string|null  $queue
+     * @return int|null
+     */
+    public function creationTimeOfOldestPendingJob($queue = null): ?int
+    {
+        return null;
+    }
+
+    /**
      * Push a new job onto the queue.
      *
      * @param  string|object $job

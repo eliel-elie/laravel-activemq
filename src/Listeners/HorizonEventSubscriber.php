@@ -54,9 +54,13 @@ class HorizonEventSubscriber
             return;
         }
 
+        $queue = property_exists($event, 'queue')
+            ? $event->queue
+            : (json_decode($event->payload, true)['queue'] ?? 'default');
+
         $this->jobs->pushed(
             $event->connectionName,
-            $event->queue,
+            $queue,
             new JobPayload($event->payload)
         );
     }

@@ -58,6 +58,20 @@ namespace Elielelie\ActiveMQ\Tests\Unit {
     use Laravel\Horizon\Contracts\MetricsRepository;
     use Laravel\Horizon\JobPayload;
     use Mockery;
+    use ReflectionClass;
+
+    function createJobQueuedEvent(string $connectionName, string $queue, string $id, string $job, string $payload): JobQueued
+    {
+        $event = (new ReflectionClass(JobQueued::class))->newInstanceWithoutConstructor();
+        $event->connectionName = $connectionName;
+        $event->id = $id;
+        $event->job = $job;
+        $event->payload = $payload;
+        if (property_exists($event, 'queue')) {
+            $event->queue = $queue;
+        }
+        return $event;
+    }
 
     beforeEach(function () {
         $this->mockJobRepository     = Mockery::mock(JobRepository::class);
@@ -109,8 +123,8 @@ namespace Elielelie\ActiveMQ\Tests\Unit {
     it('handles job queued event for activemq', function () {
         $subscriber = new HorizonEventSubscriber($this->mockJobRepository, $this->mockMetricsRepository);
 
-        $payload    = '{"uuid":"123","displayName":"MyJob"}';
-        $event      = new JobQueued('activemq', 'default', '123', 'MyJobClass', $payload, null);
+        $payload    = '{"uuid":"123","displayName":"MyJob","queue":"default"}';
+        $event      = createJobQueuedEvent('activemq', 'default', '123', 'MyJobClass', $payload);
 
         $this->mockJobRepository->shouldReceive('pushed')->once()->with(
             'activemq',
@@ -126,7 +140,7 @@ namespace Elielelie\ActiveMQ\Tests\Unit {
     it('ignores job queued event for other connections', function () {
         $subscriber = new HorizonEventSubscriber($this->mockJobRepository, $this->mockMetricsRepository);
 
-        $event      = new JobQueued('other', 'default', '123', 'MyJobClass', '{}', null);
+        $event      = createJobQueuedEvent('other', 'default', '123', 'MyJobClass', '{"queue":"default"}');
 
         $this->mockJobRepository->shouldNotReceive('pushed');
 
