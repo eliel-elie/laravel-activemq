@@ -117,8 +117,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * Get the number of pending jobs for a given queue.
      *
-     * @param  string|null  $queue
-     * @return int
+     * @param string|null $queue
      */
     public function pendingSize($queue = null): int
     {
@@ -128,8 +127,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * Get the number of delayed jobs for a given queue.
      *
-     * @param  string|null  $queue
-     * @return int
+     * @param string|null $queue
      */
     public function delayedSize($queue = null): int
     {
@@ -139,8 +137,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * Get the number of reserved jobs for a given queue.
      *
-     * @param  string|null  $queue
-     * @return int
+     * @param string|null $queue
      */
     public function reservedSize($queue = null): int
     {
@@ -150,8 +147,7 @@ class ActiveMQQueue extends Queue implements QueueInterface
     /**
      * Get the creation time of the oldest pending job.
      *
-     * @param  string|null  $queue
-     * @return int|null
+     * @param string|null $queue
      */
     public function creationTimeOfOldestPendingJob($queue = null): ?int
     {

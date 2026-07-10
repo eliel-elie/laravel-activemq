@@ -62,14 +62,16 @@ namespace Elielelie\ActiveMQ\Tests\Unit {
 
     function createJobQueuedEvent(string $connectionName, string $queue, string $id, string $job, string $payload): JobQueued
     {
-        $event = (new ReflectionClass(JobQueued::class))->newInstanceWithoutConstructor();
+        $event                 = (new ReflectionClass(JobQueued::class))->newInstanceWithoutConstructor();
         $event->connectionName = $connectionName;
-        $event->id = $id;
-        $event->job = $job;
-        $event->payload = $payload;
+        $event->id             = $id;
+        $event->job            = $job;
+        $event->payload        = $payload;
+
         if (property_exists($event, 'queue')) {
             $event->queue = $queue;
         }
+
         return $event;
     }
 
